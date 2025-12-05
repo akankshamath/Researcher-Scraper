@@ -42,7 +42,7 @@ export async function fetchOrgContributors(githubToken?: string): Promise<Public
       const person: PublicResearcher = {
         name,
         title: undefined,
-        company: 'xAI', // inferred
+        company: 'xAI', 
         location: location || undefined,
         locationConfidence: location
           ? (location.toLowerCase().includes('palo alto') ? 'high' : 'medium')
@@ -58,7 +58,7 @@ export async function fetchOrgContributors(githubToken?: string): Promise<Public
       };
 
       people.push(person);
-      await new Promise(r => setTimeout(r, 300)); // be nice to GitHub
+      await new Promise(r => setTimeout(r, 300));
     }
   }
 
