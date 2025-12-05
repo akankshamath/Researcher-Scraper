@@ -1,0 +1,90 @@
+{
+  "company": "xAI",
+  "headquarters": "1450 Page Mill Road, Palo Alto, California",
+  "founded": "March 2023",
+  "knownTeamMembers": [
+    {
+      "name": "Elon Musk",
+      "title": "CEO & Founder",
+      "location": "Palo Alto, CA",
+      "source": "Public record",
+      "confidence": "high"
+    },
+    {
+      "name": "Igor Babuschkin",
+      "title": "Chief Engineer",
+      "location": "Palo Alto, CA",
+      "previousCompany": "Google DeepMind",
+      "source": "Fortune, Yahoo Finance",
+      "confidence": "high"
+    },
+    {
+      "name": "Christian Szegedy",
+      "title": "Co-founder",
+      "location": "Palo Alto, CA",
+      "previousCompany": "Google",
+      "source": "Public record",
+      "confidence": "high"
+    },
+    {
+      "name": "Yuhuai (Tony) Wu",
+      "title": "Co-founder",
+      "location": "Palo Alto, CA",
+      "previousCompany": "OpenAI",
+      "source": "Public record",
+      "confidence": "high"
+    },
+    {
+      "name": "Jimmy Ba",
+      "title": "Co-founder, Model Optimization Lead",
+      "location": "Palo Alto, CA",
+      "previousCompany": "University of Toronto",
+      "source": "Company reports",
+      "confidence": "high"
+    },
+    {
+      "name": "Jared Birchall",
+      "title": "CFO",
+      "location": "Palo Alto, CA",
+      "source": "Public record",
+      "confidence": "high"
+    },
+    {
+      "name": "Manuel Kroiss",
+      "title": "Co-founder",
+      "location": "Palo Alto, CA",
+      "previousCompany": "DeepMind",
+      "source": "Company reports",
+      "confidence": "medium"
+    },
+    {
+      "name": "Toby Pohlen",
+      "title": "Co-founder",
+      "location": "Palo Alto, CA",
+      "previousCompany": "DeepMind",
+      "source": "Company reports",
+      "confidence": "medium"
+    },
+    {
+      "name": "Daniel Rowland",
+      "title": "Data Center Operations Lead",
+      "location": "Palo Alto, CA",
+      "source": "Company reports",
+      "confidence": "medium"
+    }
+  ],
+  "notes": [
+    "xAI has 1,200+ employees as of 2025",
+    "Palo Alto office at Page Mill Center (105,000 sq ft)",
+    "Team recruited from Google DeepMind, OpenAI, Microsoft, Meta, Tesla",
+    "250+ open positions as of 2025",
+    "Focus on Grok AI development"
+  ],
+  "sources": [
+    "https://x.ai/company/",
+    "https://fortune.com/2023/11/20/xai-organizational-structure-elon-musk-top-executives/",
+    "https://finance.yahoo.com/news/xai-org-chart-top-power-100000518.html",
+    "https://therealdeal.com/san-francisco/2025/10/30/elon-musks-xai-expands-in-palo-alto-with-big-office-lease/",
+    "https://websets.exa.ai/websets/directory/xai-executives"
+  ]
+}
