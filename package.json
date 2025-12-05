@@ -1,0 +1,37 @@
+{
+  "name": "xaiscraper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "scrape": "ts-node scraper-premium.ts",
+    "scrape-premium": "ts-node scraper-premium.ts",
+    "scrape-github-only": "ts-node scraper-researchers.ts",
+    "scrape-with-execs": "ts-node scraper-enhanced.ts",
+    "scrape-basic": "ts-node scraper-legal.ts",
+    "scrape-linkedin": "ts-node scraper.ts",
+    "build": "tsc",
+    "test": "playwright test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
+    "csv-writer": "^1.6.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "fsevents": "^2.3.2",
+    "playwright": "^1.57.0",
+    "playwright-core": "^1.57.0",
+    "undici-types": "^7.16.0"
+  },
+  "description": ""
+}

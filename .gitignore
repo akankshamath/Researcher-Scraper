@@ -1,0 +1,20 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Environment variables and API keys
+.env
+
+# Generated scraper outputs
+*.csv
+*.txt
+*_checklist.txt
+*_contacts.txt
+*_summary.txt
+dist/
+xai-company-page.png
