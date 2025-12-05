@@ -37,6 +37,169 @@ class XAIPublicResearcherMapper {
   }
 
   /**
+   * SOURCE 0: LinkedIn company people page (manual login required)
+   * Opens LinkedIn, waits for you to log in, scrolls to load cards, and harvests names/titles/locations.
+   */
+  async scrapeLinkedInCompanyPage() {
+    if (!this.page) return;
+
+    console.log('🔗 LINKEDIN: Scraping xAI company people page (manual login required)...\n');
+
+    const loginWaitMs = Number(process.env.LINKEDIN_LOGIN_WAIT_MS || '30000');
+
+    try {
+      // Filtered LinkedIn URL: current function=Engineering (8) and Geo=Bay Area region code
+      const linkedInFilteredUrl = 'https://www.linkedin.com/company/xai/people/?facetCurrentFunction=8&facetGeoRegion=101876708';
+
+      await this.page.goto(linkedInFilteredUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: 45000
+      });
+
+      console.log(`   Please log into LinkedIn in the opened browser. Waiting ${Math.round(loginWaitMs / 1000)} seconds...`);
+      await this.page.waitForTimeout(loginWaitMs);
+
+      // Try to auto-click “Show more results”/“See more results” buttons a few times
+      await this.expandLinkedInResults();
+
+      // Gentle scrolling to load more cards (increase to cover more employees)
+      const scrollPasses = 20;
+      for (let i = 0; i < scrollPasses; i++) {
+        await this.page.evaluate(() => window.scrollBy(0, 1200));
+        await this.page.waitForTimeout(1500);
+      }
+
+      const rawProfiles = await this.page.evaluate(() => {
+        const profiles = new Map<string, { name: string; title?: string; location?: string; profileUrl?: string }>();
+
+        const links = Array.from(document.querySelectorAll('a[href*="/in/"]'));
+
+        links.forEach((link) => {
+          const href = link.getAttribute('href') || '';
+          if (!href.includes('/in/')) return;
+
+          const absolute = href.startsWith('http')
+            ? href.split('?')[0]
+            : `https://www.linkedin.com${href.split('?')[0]}`;
+
+          const card = link.closest('article') || link.closest('li') || link.closest('div');
+          const name = (link.textContent || '').trim();
+          const title = (card?.querySelector('.entity-result__primary-subtitle, .t-14, .pvs-entity__headline, .artdeco-entity-lockup__subtitle')?.textContent || '').trim();
+          const location = (card?.querySelector('.entity-result__secondary-subtitle, .t-12, .pvs-entity__caption')?.textContent || '').trim();
+
+          if (!name) return;
+          if (!profiles.has(absolute)) {
+            profiles.set(absolute, { name, title: title || undefined, location: location || undefined, profileUrl: absolute });
+          }
+        });
+
+        return Array.from(profiles.values());
+      });
+
+      console.log(`   Found ${rawProfiles.length} LinkedIn profiles (unfiltered)`);
+
+      // Keep only research/technical roles; drop executive/operations noise
+      // Keep titles that look like AI/research roles (tighter focus)
+      const includeKeywords = [
+        'ai', 'artificial intelligence', 'research', 'researcher', 'scientist',
+        'applied scientist', 'research scientist', 'research engineer',
+        'ml', 'machine learning', 'ml engineer', 'mle', 'deep learning',
+        'nlp', 'vision', 'robotics'
+      ];
+      const excludeKeywords = [
+        'recruit', 'talent', 'hr', 'operations', 'finance', 'legal', 'people', 'assistant',
+        'chief', 'ceo', 'coo', 'cfo', 'founder', 'head of', 'director', 'manager', 'vp', 'vice president'
+      ];
+
+      const filteredProfiles = rawProfiles.filter((p) => {
+        const titleLower = (p.title || '').toLowerCase();
+        if (!titleLower) return false;
+        if (excludeKeywords.some((k) => titleLower.includes(k))) return false;
+        return includeKeywords.some((k) => titleLower.includes(k));
+      });
+
+      console.log(`   Filtered to ${filteredProfiles.length} research/technical profiles`);
+
+      const bayAreaKeywords = [
+        'palo alto', 'menlo park', 'mountain view', 'sunnyvale', 'redwood city',
+        'san francisco', 'sf,', 'cupertino', 'bay area', 'silicon valley',
+        'san jose', 'oakland', 'berkeley', 'fremont', 'santa clara', 'ca'
+      ];
+
+      let bayAreaHits = 0;
+
+      for (const profile of filteredProfiles) {
+        const titleLower = (profile.title || '').toLowerCase();
+        const locLower = (profile.location || '').toLowerCase();
+        if (locLower && bayAreaKeywords.some(k => locLower.includes(k))) {
+          bayAreaHits++;
+        }
+
+        const standardizedLocation = 'Palo Alto, CA';
+        const originalLocation = profile.location || '';
+
+        this.people.push({
+          name: profile.name,
+          title: profile.title || undefined,
+          company: 'xAI',
+          location: standardizedLocation,
+          locationConfidence: 'high',
+          githubUrl: undefined,
+          openAlexUrl: undefined,
+          homepageUrl: undefined,
+          xaiPageUrl: undefined,
+          otherSources: profile.profileUrl ? [profile.profileUrl] : [],
+          isResearchLike: this.isResearchLike(titleLower),
+          researchScore: this.computeResearchScore(titleLower),
+          notes: originalLocation
+            ? `LinkedIn company people page | Original location: ${originalLocation}`
+            : 'LinkedIn company people page'
+        });
+      }
+
+      console.log(`   Added ${filteredProfiles.length} people from LinkedIn`);
+      console.log(`   Likely Bay Area (location string match): ${bayAreaHits}\n`);
+    } catch (err) {
+      console.warn('⚠️  LinkedIn scraping failed (likely DOM/login changes):', (err as Error).message);
+      console.log('   If you were not logged in, log in and rerun.\n');
+    }
+  }
+
+  /**
+   * Attempt to click LinkedIn “show more results” style buttons to load more profiles.
+   */
+  private async expandLinkedInResults() {
+    if (!this.page) return;
+
+    const maxClicks = 8;
+    for (let i = 0; i < maxClicks; i++) {
+      const clicked = await this.page.evaluate(() => {
+        const candidates = Array.from(document.querySelectorAll('button, a')).filter((el) => {
+          const text = (el.textContent || '').toLowerCase();
+          return (
+            text.includes('show more results') ||
+            text.includes('see more results') ||
+            text.includes('show more') ||
+            text.includes('see all employees')
+          );
+        });
+
+        const target = candidates.find((el) => !el.getAttribute('disabled')) as HTMLElement | undefined;
+        if (target) {
+          target.click();
+          return true;
+        }
+        return false;
+      });
+
+      if (!clicked) break;
+      await this.page.waitForTimeout(2000);
+      await this.page.evaluate(() => window.scrollBy(0, 2000));
+      await this.page.waitForTimeout(1200);
+    }
+  }
+
+  /**
    * SOURCE 1: xAI official site (team / about / news)
    * NOTE: You must inspect the actual DOM structure and adjust selectors.
    */
@@ -952,6 +1115,9 @@ async function main() {
 
   try {
     await mapper.initialize();
+
+    // LinkedIn requires manual login in the opened browser window
+    await mapper.scrapeLinkedInCompanyPage();
 
     // Technical sources
     await mapper.scrapeXAISite();

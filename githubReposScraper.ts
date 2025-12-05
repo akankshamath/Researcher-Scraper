@@ -5,7 +5,7 @@ export async function fetchOrgContributors(githubToken?: string): Promise<Public
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' };
   if (githubToken) headers.Authorization = `Bearer ${githubToken}`;
 
-  // 1) Get a small list of repos in xai-org (you can restrict by topic later)
+  // A few repos in xai-org to get a list of contributors
   const reposRes = await fetch(
     `https://api.github.com/orgs/${GITHUB_ORG}/repos?per_page=10`,
     { headers }
@@ -58,7 +58,7 @@ export async function fetchOrgContributors(githubToken?: string): Promise<Public
       };
 
       people.push(person);
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 300)); 
     }
   }
 

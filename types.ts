@@ -12,7 +12,7 @@ export interface PublicResearcher {
   otherSources: string[];
 
   isResearchLike: boolean;
-  researchScore: number; // 0–1
+  researchScore: number;
   notes?: string;
 }
 
