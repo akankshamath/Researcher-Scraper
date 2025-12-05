@@ -130,20 +130,21 @@ class XAIPublicResearcherMapper {
 
       for (const profile of filteredProfiles) {
         const titleLower = (profile.title || '').toLowerCase();
-        const locLower = (profile.location || '').toLowerCase();
-        if (locLower && bayAreaKeywords.some(k => locLower.includes(k))) {
+        const loc = (profile.location || '').trim();
+        const locLower = loc.toLowerCase();
+        const bayAreaMatch = locLower && bayAreaKeywords.some(k => locLower.includes(k));
+        if (bayAreaMatch) {
           bayAreaHits++;
         }
 
-        const standardizedLocation = 'Palo Alto, CA';
-        const originalLocation = profile.location || '';
+        const locationConfidence = bayAreaMatch ? 'high' : 'medium'; // URL is already Bay Area-filtered
 
         this.people.push({
           name: profile.name,
           title: profile.title || undefined,
           company: 'xAI',
-          location: standardizedLocation,
-          locationConfidence: 'high',
+          location: loc || undefined,
+          locationConfidence,
           githubUrl: undefined,
           openAlexUrl: undefined,
           homepageUrl: undefined,
@@ -151,9 +152,9 @@ class XAIPublicResearcherMapper {
           otherSources: profile.profileUrl ? [profile.profileUrl] : [],
           isResearchLike: this.isResearchLike(titleLower),
           researchScore: this.computeResearchScore(titleLower),
-          notes: originalLocation
-            ? `LinkedIn company people page | Original location: ${originalLocation}`
-            : 'LinkedIn company people page'
+          notes: loc
+            ? `LinkedIn company people page (Bay Area filter) | Original location: ${loc}`
+            : 'LinkedIn company people page (Bay Area filter)'
         });
       }
 
