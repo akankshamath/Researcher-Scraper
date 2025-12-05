@@ -48,7 +48,7 @@ class XAIPublicResearcherMapper {
     const loginWaitMs = Number(process.env.LINKEDIN_LOGIN_WAIT_MS || '30000');
 
     try {
-      // Filtered LinkedIn URL: current function=Engineering (8) and Geo=Bay Area region code
+      // Filtered LinkedIn URL: current function=Engineering (8) and Geo=Palo Alto region code
       const linkedInFilteredUrl = 'https://www.linkedin.com/company/xai/people/?facetCurrentFunction=8&facetGeoRegion=101876708';
 
       await this.page.goto(linkedInFilteredUrl, {
@@ -99,7 +99,7 @@ class XAIPublicResearcherMapper {
       console.log(`   Found ${rawProfiles.length} LinkedIn profiles (unfiltered)`);
 
       // Keep only research/technical roles; drop executive/operations noise
-      // Keep titles that look like AI/research roles (tighter focus)
+      // Keep titles that look like AI/research roles
       const researchKeywords = [
         'research', 'researcher', 'research scientist', 'research engineer',
         'applied scientist', 'scientist', 'ai researcher', 'ml researcher',
