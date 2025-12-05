@@ -37,7 +37,7 @@ export async function fetchOrgContributors(githubToken?: string): Promise<Public
       const location = (user.location || '').trim();
 
       const isResearchLike = /research|scientist|ml|ai|deep learning|nlp|vision|robotics/.test(bio);
-      const researchScore = isResearchLike ? 0.6 : 0.3; // conservative
+      const researchScore = isResearchLike ? 0.6 : 0.3; 
 
       const person: PublicResearcher = {
         name,
