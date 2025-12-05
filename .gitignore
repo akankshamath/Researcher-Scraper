@@ -18,3 +18,6 @@ node_modules/
 *_summary.txt
 dist/
 xai-company-page.png
+
+# Local-only scripts
+scraper-researchers.ts
