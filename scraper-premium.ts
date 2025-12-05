@@ -100,11 +100,14 @@ class XAIPublicResearcherMapper {
 
       // Keep only research/technical roles; drop executive/operations noise
       // Keep titles that look like AI/research roles (tighter focus)
-      const includeKeywords = [
-        'ai', 'artificial intelligence', 'research', 'researcher', 'scientist',
-        'applied scientist', 'research scientist', 'research engineer',
-        'ml', 'machine learning', 'ml engineer', 'mle', 'deep learning',
-        'nlp', 'vision', 'robotics'
+      const researchKeywords = [
+        'research', 'researcher', 'research scientist', 'research engineer',
+        'applied scientist', 'scientist', 'ai researcher', 'ml researcher',
+        'deep learning', 'nlp', 'vision', 'robotics', 'ml scientist'
+      ];
+      const technicalKeywords = [
+        'ai', 'artificial intelligence', 'ml', 'machine learning', 'mle',
+        'engineer', 'software', 'developer'
       ];
       const excludeKeywords = [
         'recruit', 'talent', 'hr', 'operations', 'finance', 'legal', 'people', 'assistant',
@@ -115,7 +118,8 @@ class XAIPublicResearcherMapper {
         const titleLower = (p.title || '').toLowerCase();
         if (!titleLower) return false;
         if (excludeKeywords.some((k) => titleLower.includes(k))) return false;
-        return includeKeywords.some((k) => titleLower.includes(k));
+        return researchKeywords.some((k) => titleLower.includes(k)) ||
+               technicalKeywords.some((k) => titleLower.includes(k));
       });
 
       console.log(`   Filtered to ${filteredProfiles.length} research/technical profiles`);
@@ -133,11 +137,12 @@ class XAIPublicResearcherMapper {
         const loc = (profile.location || '').trim();
         const locLower = loc.toLowerCase();
         const bayAreaMatch = locLower && bayAreaKeywords.some(k => locLower.includes(k));
-        if (bayAreaMatch) {
-          bayAreaHits++;
-        }
+        // Page is already Bay Area filtered; count all as Bay Area hits
+        bayAreaHits++;
 
-        const locationConfidence = bayAreaMatch ? 'high' : 'medium'; // URL is already Bay Area-filtered
+        const isResearchRole = researchKeywords.some((k) => titleLower.includes(k));
+        const locationConfidence = 'high'; // high confidence due to page filter
+        const researchSignal = isResearchRole ? 'high' : 'medium';
 
         this.people.push({
           name: profile.name,
@@ -150,11 +155,11 @@ class XAIPublicResearcherMapper {
           homepageUrl: undefined,
           xaiPageUrl: undefined,
           otherSources: profile.profileUrl ? [profile.profileUrl] : [],
-          isResearchLike: this.isResearchLike(titleLower),
-          researchScore: this.computeResearchScore(titleLower),
+          isResearchLike: isResearchRole || this.isResearchLike(titleLower),
+          researchScore: isResearchRole ? 0.9 : this.computeResearchScore(titleLower),
           notes: loc
-            ? `LinkedIn company people page (Bay Area filter) | Original location: ${loc}`
-            : 'LinkedIn company people page (Bay Area filter)'
+            ? `LinkedIn company people page (Bay Area filter) | Original location: ${loc} | research_signal=${researchSignal}`
+            : `LinkedIn company people page (Bay Area filter) | research_signal=${researchSignal}`
         });
       }
 
@@ -1045,10 +1050,17 @@ class XAIPublicResearcherMapper {
       'sunnyvale', 'redwood city', 'cupertino', 'silicon valley', 'san jose',
       'oakland', 'berkeley', 'fremont', 'santa clara', 'sf,', 'california', 'ca'
     ];
-    const bayAreaPeople = this.people.filter((p) => {
+    const isLinkedIn = (p: PublicResearcher) =>
+      (p.otherSources || []).some((s) => s.includes('linkedin.com'));
+    const isBayArea = (p: PublicResearcher) => {
       const loc = (p.location || '').toLowerCase();
-      return bayAreaKeywords.some((k) => loc.includes(k));
-    });
+      return bayAreaKeywords.some((k) => loc.includes(k)) || isLinkedIn(p); // LinkedIn list is already Bay Area-filtered
+    };
+    const bayAreaPeople = this.people.filter(isBayArea);
+    const linkedinPeople = this.people.filter((p) => (p.otherSources || []).some((s) => s.includes('linkedin.com')));
+    const githubPeople = this.people.filter((p) => p.githubUrl);
+    const openAlexPeople = this.people.filter((p) => p.openAlexUrl);
+    const newsPeople = this.people.filter((p) => (p.otherSources || []).some((s) => s.includes('news')));
 
     console.log('📊 FINAL SUMMARY:');
     console.log('='.repeat(70));
@@ -1057,6 +1069,11 @@ class XAIPublicResearcherMapper {
     console.log(
       `   Marked research-like: ${this.people.filter((p) => p.isResearchLike).length}`
     );
+    console.log('   Source breakdown (Bay Area matches):');
+    console.log(`     LinkedIn: ${linkedinPeople.length} total | ${linkedinPeople.filter(isBayArea).length} Bay Area`);
+    console.log(`     GitHub:   ${githubPeople.length} total | ${githubPeople.filter(isBayArea).length} Bay Area`);
+    console.log(`     OpenAlex: ${openAlexPeople.length} total | ${openAlexPeople.filter(isBayArea).length} Bay Area`);
+    console.log(`     News:     ${newsPeople.length} total | ${newsPeople.filter(isBayArea).length} Bay Area`);
     console.log('='.repeat(70) + '\n');
 
     const csvWriter = createObjectCsvWriter({
@@ -1087,7 +1104,54 @@ class XAIPublicResearcherMapper {
 
     console.log(`✅ Exported public researcher map to ${filename}\n`);
 
-    // Optional: write a README-style txt summary for the VC / organiser
+    // Bay Area-only CSV
+    const bayAreaCsv = filename.replace('.csv', '_bay_area.csv');
+    const bayWriter = createObjectCsvWriter({
+      path: bayAreaCsv,
+      header: [
+        { id: 'name', title: 'Name' },
+        { id: 'title', title: 'Title' },
+        { id: 'company', title: 'Company' },
+        { id: 'location', title: 'Location' },
+        { id: 'locationConfidence', title: 'Location Confidence' },
+        { id: 'githubUrl', title: 'GitHub' },
+        { id: 'openAlexUrl', title: 'OpenAlex' },
+        { id: 'xaiPageUrl', title: 'xAI Page' },
+        { id: 'homepageUrl', title: 'Homepage' },
+        { id: 'isResearchLike', title: 'Research-like' },
+        { id: 'researchScore', title: 'Research Score' },
+        { id: 'otherSourcesStr', title: 'Sources' },
+        { id: 'notes', title: 'Notes' }
+      ]
+    });
+
+    const bayRecords = bayAreaPeople.map((p) => ({
+      ...p,
+      otherSourcesStr: (p.otherSources || []).join(' | ')
+    }));
+    await bayWriter.writeRecords(bayRecords);
+    console.log(`✅ Exported Bay Area-only CSV to ${bayAreaCsv}\n`);
+
+    // Dinner/meeting invite list for Bay Area
+    const inviteFile = filename.replace('.csv', '_bay_area_invite.txt');
+    const inviteContent = [
+      'xAI RESEARCHERS/ENGINEERS – BAY AREA INVITE LIST',
+      `Generated: ${new Date().toISOString()}`,
+      `Total Bay Area matches: ${bayAreaPeople.length}`,
+      '',
+      bayAreaPeople
+        .map((p, idx) =>
+          `${idx + 1}. ${p.name}${p.title ? ` – ${p.title}` : ''}\n` +
+          `   Location: ${p.location || 'Palo Alto, CA (LinkedIn filter)'} (${p.locationConfidence})\n` +
+          `   Sources: ${(p.otherSources || []).join(' | ') || 'n/a'}\n` +
+          `   Notes: ${p.notes || 'n/a'}`
+        )
+        .join('\n\n')
+    ].join('\n');
+    fs.writeFileSync(inviteFile, inviteContent);
+    console.log(`✅ Bay Area invite list: ${inviteFile}\n`);
+
+    // Optional: write a README-style txt summary for the organiser
     const txtFile = filename.replace('.csv', '_summary.txt');
     const content =
       `xAI PUBLIC RESEARCHER MAP (NO CONTACT DATA)\n` +
