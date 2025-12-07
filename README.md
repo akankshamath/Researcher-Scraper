@@ -110,6 +110,7 @@ To improve this MVP:
 - [ ] Implement pagination for large datasets
 - [ ] Add proxy rotation for scalability
 - [ ] Create a web interface
+- [ ] Implement Reddit and Twitter/X API
 
 ## License
 
